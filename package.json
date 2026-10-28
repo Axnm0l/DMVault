@@ -1,0 +1,13 @@
+{
+  "name": "dmvault",
+  "version": "1.0.0",
+  "description": "DMVault - Private & Local Instagram Chat Downloader and Exporter",
+  "author": "Axnm0l",
+  "scripts": {
+    "test": "node tests/html-export-security.test.mjs && node tests/release-compliance.test.mjs && node tests/package-determinism.test.mjs",
+    "package": "node scripts/package.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.58.2"
+  }
+}

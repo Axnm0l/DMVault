@@ -1,0 +1,11 @@
+cookie-netscape.txt
+output/
+__pycache__/
+.claude/
+*.pyc
+.DS_Store
+.playwright-mcp/
+node_modules/
+dist/
+*.log
+image.png
