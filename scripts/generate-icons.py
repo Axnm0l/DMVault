@@ -1,0 +1,113 @@
+import os
+import subprocess
+from PIL import Image
+
+svg_content = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="igBg" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFD600"/>
+      <stop offset="25%" stop-color="#FF0069"/>
+      <stop offset="65%" stop-color="#D300C5"/>
+      <stop offset="100%" stop-color="#7638FA"/>
+    </linearGradient>
+
+    <linearGradient id="vaultGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7638FA"/>
+      <stop offset="50%" stop-color="#D300C5"/>
+      <stop offset="100%" stop-color="#FF0069"/>
+    </linearGradient>
+
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+
+    <filter id="bubbleShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <!-- Background Squircle -->
+  <rect x="6" y="6" width="116" height="116" rx="28" fill="url(#igBg)" filter="url(#shadow)"/>
+  <rect x="7" y="7" width="114" height="114" rx="27" fill="none" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="2"/>
+
+  <!-- Chat Bubble -->
+  <g filter="url(#bubbleShadow)">
+    <path d="M 34 25 C 26 25 20 31 20 39 L 20 73 C 20 81 26 87 34 87 L 44 87 L 38 101 C 37.3 103 39.5 104.5 41.2 103.2 L 57 87 L 94 87 C 102 87 108 81 108 73 L 108 39 C 108 31 102 25 94 25 Z" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Vault Lock Body & Shackle -->
+  <!-- Shackle -->
+  <path d="M 52 46 C 52 39.4 57.4 34 64 34 C 70.6 34 76 39.4 76 46 L 76 52 L 52 52 Z" fill="none" stroke="url(#vaultGrad)" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Safe Box -->
+  <rect x="43" y="50" width="42" height="30" rx="8" fill="url(#vaultGrad)"/>
+  
+  <!-- Safe Dial / Combination Ring -->
+  <circle cx="64" cy="65" r="9" fill="none" stroke="#FFFFFF" stroke-width="2.5" opacity="0.95"/>
+  <circle cx="64" cy="65" r="3" fill="#FFFFFF"/>
+  
+  <!-- Vault Rivets -->
+  <circle cx="48" cy="55" r="1.5" fill="#FFFFFF" opacity="0.75"/>
+  <circle cx="80" cy="55" r="1.5" fill="#FFFFFF" opacity="0.75"/>
+  <circle cx="48" cy="75" r="1.5" fill="#FFFFFF" opacity="0.75"/>
+  <circle cx="80" cy="75" r="1.5" fill="#FFFFFF" opacity="0.75"/>
+
+  <!-- Download Arrow Accent -->
+  <path d="M 64 68 L 64 77 M 60.5 73.5 L 64 77 L 67.5 73.5" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+'''
+
+# Write SVG
+icons_dir = os.path.join(os.path.dirname(__file__), '..', 'extension', 'icons')
+svg_path = os.path.join(icons_dir, 'icon.svg')
+with open(svg_path, 'w', encoding='utf-8') as f:
+    f.write(svg_content)
+print(f"Wrote {svg_path}")
+
+# Create temp HTML for rendering
+html_content = f'''<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+  html, body {{ width: 512px; height: 512px; overflow: hidden; background: transparent; }}
+</style>
+</head>
+<body>
+  {svg_content}
+</body>
+</html>
+'''
+
+temp_html = os.path.join(icons_dir, 'temp_render.html')
+temp_png = os.path.join(icons_dir, 'temp_render.png')
+with open(temp_html, 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+chrome_exe = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+cmd = [
+    chrome_exe,
+    "--headless",
+    "--disable-gpu",
+    "--default-background-color=00000000",
+    f"--screenshot={temp_png}",
+    "--window-size=512,512",
+    f"file:///{os.path.abspath(temp_html).replace(os.sep, '/')}"
+]
+subprocess.run(cmd, check=True)
+
+# Resize to 128, 48, 16
+im = Image.open(temp_png).convert("RGBA")
+for size in [128, 48, 16]:
+    out_im = im.resize((size, size), Image.Resampling.LANCZOS)
+    out_path = os.path.join(icons_dir, f'icon{size}.png')
+    out_im.save(out_path, format="PNG")
+    print(f"Generated {out_path} ({size}x{size})")
+
+# Cleanup
+if os.path.exists(temp_html):
+    os.remove(temp_html)
+if os.path.exists(temp_png):
+    os.remove(temp_png)
+
+print("Icons generated successfully!")
